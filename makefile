@@ -15,11 +15,9 @@ $(TARGET): $(OBJ)
 	$(CC) $(CFLAGS) $(LIBS) -c -o $@ $<
 
 install: $(TARGET)
-	@echo "installing $(TARGET) to $(PREFIX)/$(TARGET)"
 	install -m 755 $(TARGET) $(PREFIX)/$(TARGET)
 
 uninstall:
-	@echo "removing $(PREFIX)/$(TARGET)"
 	rm -f $(PREFIX)/$(TARGET)
 
 clean:
