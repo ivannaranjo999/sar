@@ -23,7 +23,7 @@ SAR archives are just a flat binary file which is built as a concatenation of bl
 ```
 
 ## Compression
-When invoked with `pz`/`uz`, SAR compresses and decompresses the entire archive using **zlib's deflate/inflate** algorithm. The result is a **gzip envelope** with the same format produced by starndard `gzip` tool.
+When invoked with `pz`/`uz`, SAR compresses and decompresses the entire archive using **zlib's deflate/inflate** algorithm. The result is a **gzip envelope** with the same format produced by standard `gzip` tool.
 
 Compression is applied to the **whole archive** after packing, not per file. This ensures better compression that compressing each file individually.
 
