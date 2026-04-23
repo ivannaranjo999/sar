@@ -13,7 +13,7 @@
 
 #define SAR_MAGIC "SAR" /* Magic string at start of every header */
 #define SAR_VERSION 1 /* format version */
-#define SAR_MAX_PATH 256 /* max length of stored filename */
+#define SAR_MAX_PATH 4096 /* max length of stored path */
 
 #define COPY_BUFFER_SIZE 4096 
 #define ZCHUNK 16384
