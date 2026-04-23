@@ -8,6 +8,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <utime.h>
+#include <dirent.h>
 #include <zlib.h>
 
 #define SAR_MAGIC "SAR" /* Magic string at start of every header */

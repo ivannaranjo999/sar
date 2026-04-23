@@ -8,11 +8,15 @@
  * ------------------------------------------------------------------------- */
 static int pack_file(FILE *archive, const char *filepath){
   /* Local variables */
-  struct stat  st;
-  FILE        *src;
-  FileHeader   header;
-  char         buf[COPY_BUFFER_SIZE];
-  size_t       bytes_read;
+  struct stat    st;
+  FILE          *src;
+  DIR           *dir;
+  struct dirent *entry;
+  FileHeader     header;
+  char           buf[COPY_BUFFER_SIZE];
+  char           fullpath[SAR_MAX_PATH];
+  size_t         bytes_read;
+  int            result = 0;
 
   /* Code */
   /* Read metadata */
@@ -21,7 +25,30 @@ static int pack_file(FILE *archive, const char *filepath){
     return -1;
   }
 
-  /* Operate only regular files - no dirs or symlinks */
+  /* If dir, recurse */
+  if(S_ISDIR(st.st_mode)){
+    dir = opendir(filepath);
+    if (dir == NULL){
+      perror(filepath);
+      return -1;
+    }
+    while((entry = readdir(dir)) != NULL){
+      if(strcmp(entry->d_name, ".") == 0) continue;
+      if(strcmp(entry->d_name, "..") == 0) continue;
+      if (snprintf(fullpath, sizeof(fullpath), "%s/%s",
+          filepath, entry->d_name) >= (int)sizeof(fullpath)){
+        fprintf(stderr, "error: path too long: '%s/%s'\n", 
+          filepath, entry->d_name);
+        result = -1;
+        continue;
+      }
+      if (pack_file(archive, fullpath) != 0) result = -1;
+    }
+    closedir(dir);
+    return result;
+  }
+
+  /* Operate only regular files */
   if (!S_ISREG(st.st_mode)) {
     fprintf(stderr, "skipping '%s': not a regular file\n", filepath);
     return -1;
@@ -196,10 +223,8 @@ int compressArch(const char *dst_path, const char *src_path){
   /* Clean up */
   (void)deflateEnd(&strm);
 
-  printf("%d\n",__LINE__);
   fclose(dst);
   fclose(src);
 
-  printf("%d\n",__LINE__);
   return 0;
 }
