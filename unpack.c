@@ -1,4 +1,5 @@
 #include "sar.h"
+
 /* ----------------------------------------------------------------------------
  * mkdir_parents
  *
@@ -151,6 +152,7 @@ int unpack(const char *archive_path){
     perror(archive_path);
     return -1;
   }
+  setvbuf(archive, NULL, _IOFBF, SAR_ARCHIVE_BUF_SIZE);
 
   while((status = unpack_file(archive)) == 1){
     /* Keep going until EOF or error */
@@ -184,6 +186,7 @@ int decompressArch(const char *dst_path, const char *src_path){
     fprintf(stderr, "error: could not open '%s'\n", dst_path);
     return -1;
   }
+  setvbuf(dst, NULL, _IOFBF, SAR_ARCHIVE_BUF_SIZE);
 
   src = fopen(src_path, "rb");
   if(src == NULL){
@@ -191,6 +194,7 @@ int decompressArch(const char *dst_path, const char *src_path){
     fclose(dst);
     return -1;
   }
+  setvbuf(src, NULL, _IOFBF, SAR_ARCHIVE_BUF_SIZE);
 
   /* Initialize the zlib stream for decompression */
   strm.zalloc   = Z_NULL;

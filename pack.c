@@ -120,6 +120,7 @@ int pack(const char *archive_path, const char **filepaths, int count){
     perror(archive_path);
     return -1;
   }
+  setvbuf(archive, NULL, _IOFBF, SAR_ARCHIVE_BUF_SIZE);
 
   for (it = 0; it < count; ++it){
     if(pack_file(archive, filepaths[it]) != 0){
@@ -153,6 +154,7 @@ int compressArch(const char *dst_path, const char *src_path){
     fprintf(stderr, "error: could not open '%s'\n", dst_path);
     return -1;
   }
+  setvbuf(dst, NULL, _IOFBF, SAR_ARCHIVE_BUF_SIZE);
 
   src = fopen(src_path, "rb");
   if (src == NULL) {
@@ -160,6 +162,7 @@ int compressArch(const char *dst_path, const char *src_path){
     fclose(dst);
     return -1;
   }
+  setvbuf(src, NULL, _IOFBF, SAR_ARCHIVE_BUF_SIZE);
 
   /* Initialize the zlib stream for compression */
   strm.zalloc = Z_NULL;
