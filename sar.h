@@ -30,9 +30,9 @@ typedef struct {
 
 } FileHeader;
 
-int pack(const char *archive_path, const char **filepaths, int count);
-int unpack(const char *archive_path);
-int compressArch(const char *dst_path, const char *src_path);
-int decompressArch(const char *dst_path, const char *src_path);
+int pack(const char *archive_path, const char **filepaths, int count, int verbose);
+int unpack(const char *archive_path, int verbose);
+int compressArch(const char *dst_path, const char *src_path, int verbose);
+int decompressArch(const char *dst_path, const char *src_path, int verbose);
 
 #endif

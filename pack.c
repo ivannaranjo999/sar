@@ -6,7 +6,7 @@
  * Write one file into the open archive.
  * Returns 0 on success, -1 on error.
  * ------------------------------------------------------------------------- */
-static int pack_file(FILE *archive, const char *filepath){
+static int pack_file(FILE *archive, const char *filepath, int verbose){
   /* Local variables */
   struct stat    st;
   FILE          *src;
@@ -42,7 +42,7 @@ static int pack_file(FILE *archive, const char *filepath){
         result = -1;
         continue;
       }
-      if (pack_file(archive, fullpath) != 0) result = -1;
+      if (pack_file(archive, fullpath, verbose) != 0) result = -1;
     }
     closedir(dir);
     return result;
@@ -94,9 +94,10 @@ static int pack_file(FILE *archive, const char *filepath){
   }
 
   fclose(src);
-  printf("packed: '%s' (%llu + %llu bytes)\n", 
-    filepath, (unsigned long long)sizeof(FileHeader),
-    (unsigned long long)st.st_size);
+  if (verbose)
+    printf("packed: '%s' (%llu + %llu bytes)\n", 
+      filepath, (unsigned long long)sizeof(FileHeader),
+      (unsigned long long)st.st_size);
 
   return 0;
 }
@@ -108,7 +109,7 @@ static int pack_file(FILE *archive, const char *filepath){
  * 'filepaths[0..count-1]'.
  * Returns 0 on success, -1 on error.
  * ------------------------------------------------------------------------- */
-int pack(const char *archive_path, const char **filepaths, int count){
+int pack(const char *archive_path, const char **filepaths, int count, int verbose){
   /* Local variables */
   FILE *archive;
   int   result = 0;
@@ -123,7 +124,7 @@ int pack(const char *archive_path, const char **filepaths, int count){
   setvbuf(archive, NULL, _IOFBF, SAR_ARCHIVE_BUF_SIZE);
 
   for (it = 0; it < count; ++it){
-    if(pack_file(archive, filepaths[it]) != 0){
+    if(pack_file(archive, filepaths[it], verbose) != 0){
       result = -1; /* record failure but keep packing */
     }
   }
@@ -138,7 +139,7 @@ int pack(const char *archive_path, const char **filepaths, int count){
  * Compress to 'dst' from 'src'
  * Returns 0 on success, -1 on error.
  * ------------------------------------------------------------------------- */
-int compressArch(const char *dst_path, const char *src_path){
+int compressArch(const char *dst_path, const char *src_path, int verbose){
   /* Local variables */
   int ret, flush;
   unsigned have;
@@ -149,6 +150,10 @@ int compressArch(const char *dst_path, const char *src_path){
   FILE *src;
 
   /* Code */
+  if (verbose)
+    printf("compressing to '%s'\n", 
+      dst_path);
+
   dst = fopen(dst_path, "wb");
   if (dst == NULL) {
     fprintf(stderr, "error: could not open '%s'\n", dst_path);

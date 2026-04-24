@@ -37,7 +37,7 @@ static int mkdir_parents(const char *filepath){
  *         0 if we have reached EOF
  *        -1 on error
  * ------------------------------------------------------------------------- */
-static int unpack_file(FILE *archive){
+static int unpack_file(FILE *archive, int verbose){
   /* Local variables */
   FileHeader     header;
   FILE          *dst;
@@ -128,8 +128,9 @@ static int unpack_file(FILE *archive){
     perror("utime");
   }
 
-  printf("unpacked: '%s' (%llu bytes)\n",
-    header.filename, (unsigned long long)header.file_size);
+  if(verbose)
+    printf("unpacked: '%s' (%llu bytes)\n",
+      header.filename, (unsigned long long)header.file_size);
 
   return 1;
 }
@@ -140,7 +141,7 @@ static int unpack_file(FILE *archive){
  * Extract all files from the archive at 'archive_path'.
  * Returns 0 on success, -1 if any file failed.
  * ------------------------------------------------------------------------- */
-int unpack(const char *archive_path){
+int unpack(const char *archive_path, int verbose){
   /* Local variables */
   FILE *archive;
   int   result = 0;
@@ -154,7 +155,7 @@ int unpack(const char *archive_path){
   }
   setvbuf(archive, NULL, _IOFBF, SAR_ARCHIVE_BUF_SIZE);
 
-  while((status = unpack_file(archive)) == 1){
+  while((status = unpack_file(archive, verbose)) == 1){
     /* Keep going until EOF or error */
   }
 
@@ -170,7 +171,7 @@ int unpack(const char *archive_path){
  * Decompress to 'dst' from 'src'
  * Returns 0 on success, -1 on error.
  * ------------------------------------------------------------------------- */
-int decompressArch(const char *dst_path, const char *src_path){
+int decompressArch(const char *dst_path, const char *src_path, int verbose){
   /* Local variables */
   int ret;
   unsigned have;
@@ -181,6 +182,10 @@ int decompressArch(const char *dst_path, const char *src_path){
   FILE *src;
 
   /* Code */
+  if (verbose)
+    printf("decompressing from '%s'\n", 
+      src_path);
+
   dst = fopen(dst_path, "wb");
   if(dst == NULL){
     fprintf(stderr, "error: could not open '%s'\n", dst_path);
