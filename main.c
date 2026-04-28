@@ -9,8 +9,8 @@ static void usage(const char *name){
   fprintf(stderr, "  %s uz  <archive.sar.gz>                 Unpack compressed SAR archive.\n", name);
   fprintf(stderr, "  %s l   <archive.sar>                    List files contained in a SAR archive.\n", name);
   fprintf(stderr, "  %s lz  <archive.sar.gz>                 List files contained in a compressed SAR archive.\n", name);
-  fprintf(stderr, "  %s g   <archive.sar> <file1..fileN>     Grab files contained in a SAR archive.\n", name);
-  fprintf(stderr, "  %s gz  <archive.sar.gz> <file1..fileN>  Grab files contained in a compressed SAR archive.\n", name);
+  fprintf(stderr, "  %s g   <archive.sar> <file1..fileN>     Grab specific files contained in a SAR archive.\n", name);
+  fprintf(stderr, "  %s gz  <archive.sar.gz> <file1..fileN>  Grab specific files contained in a compressed SAR archive.\n", name);
   fprintf(stderr, "Flags:\n");
   fprintf(stderr, "  -v verbose output\n");
 }
@@ -124,6 +124,20 @@ int main(int argc, char *argv[]){
   /* Action - g */
   } else if (strcmp(action, "g") == 0){
     return grab(archive_path, filepaths, nfiles, verbose) == 0 ? 0 : 1;
+
+  /* Action - gz */
+  } else if (strcmp(action, "gz") == 0){
+    if(decompressArch(tmpFile, archive_path, verbose) != 0){
+      fprintf(stderr, "error: decompress failed\n");
+      return 1;
+    }
+
+    if(grab(tmpFile, filepaths, nfiles, verbose)){
+      fprintf(stderr, "error: grab failed\n");
+      return 1;
+    }
+
+    return remove(tmpFile) == 0 ? 0 : 1;
 	
   /* Unknown action */
   } else {
