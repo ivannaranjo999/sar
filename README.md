@@ -1,18 +1,20 @@
 # SAR - Simple ARchiver
-sar is a command-line tool with two modes
+PENDING TEXT
 
 ```
-# Pack files to create a .sar archive
-sar p   <archive.sar> <file1..fileN>
+Usage:
+Actions:
+  sar p   <archive.sar> <file1..fileN>     Pack given files or folders to a SAR archive.
+  sar pz  <archive.sar.gz> <file1..fileN>  Pack given files or folders to a SAR archive and compress it.
+  sar u   <archive.sar>                    Unpack SAR archive.
+  sar uz  <archive.sar.gz>                 Unpack compressed SAR archive.
+  sar l   <archive.sar>                    List files contained in a SAR archive.
+  sar lz  <archive.sar.gz>                 List files contained in a compressed SAR archive.
+  sar g   <archive.sar> <file1..fileN>     Grab files contained in a SAR archive.
+  sar gz  <archive.sar.gz> <file1..fileN>  Grab files contained in a compressed SAR archive.
+Flags:
+  -v verbose output
 
-# Unpack .sar to files
-sar u   <archive.sar>
-
-# Pack files to a .sar archive and compress it using zlib
-sar pz  <archive.sar.gz> <file1..fileN>
-
-# Unpack compressed .sar file
-sar uz  <archive.sar.gz>
 ```
 
 ## The format
