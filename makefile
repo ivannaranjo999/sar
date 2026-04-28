@@ -9,10 +9,10 @@ PREFIX = /usr/local/bin
 all: $(TARGET) clean
 
 $(TARGET): $(OBJ)
-	$(CC) $(CFLAGS) $(LIBS) -o $@ $^
+	$(CC) $(CFLAGS) -o $@ $^ $(LIBS)
 
 %.o: %.c sar.h
-	$(CC) $(CFLAGS) $(LIBS) -c -o $@ $<
+	$(CC) $(CFLAGS) -c -o $@ $< $(LIBS)
 
 install: $(TARGET)
 	install -m 755 $(TARGET) $(PREFIX)/$(TARGET)
