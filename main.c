@@ -4,11 +4,13 @@ static void usage(const char *name){
   fprintf(stderr, "Usage:\n");
   fprintf(stderr, "Actions:\n");
   fprintf(stderr, "  %s p   <archive.sar> <file1..fileN>     Pack given files or folders to a SAR archive.\n", name);
-  fprintf(stderr, "  %s u   <archive.sar>                    Unpack SAR archive.\n", name);
   fprintf(stderr, "  %s pz  <archive.sar.gz> <file1..fileN>  Pack given files or folders to a SAR archive and compress it.\n", name);
+  fprintf(stderr, "  %s u   <archive.sar>                    Unpack SAR archive.\n", name);
   fprintf(stderr, "  %s uz  <archive.sar.gz>                 Unpack compressed SAR archive.\n", name);
   fprintf(stderr, "  %s l   <archive.sar>                    List files contained in a SAR archive.\n", name);
   fprintf(stderr, "  %s lz  <archive.sar.gz>                 List files contained in a compressed SAR archive.\n", name);
+  fprintf(stderr, "  %s g   <archive.sar> <file1..fileN>     Grab files contained in a SAR archive.\n", name);
+  fprintf(stderr, "  %s gz  <archive.sar.gz> <file1..fileN>  Grab files contained in a compressed SAR archive.\n", name);
   fprintf(stderr, "Flags:\n");
   fprintf(stderr, "  -v verbose output\n");
 }
@@ -52,6 +54,7 @@ int main(int argc, char *argv[]){
     return 1;
   }
 
+  /* Action - p */
   if (strcmp(action, "p") == 0){
     if (nfiles == 0) {
       fprintf(stderr, "error: 'p' requires at least one file\n");
@@ -61,6 +64,7 @@ int main(int argc, char *argv[]){
 
     return pack(archive_path, filepaths, nfiles, verbose) == 0 ? 0 : 1;
 
+  /* Action - pz */
   } else if (strcmp(action, "pz") == 0){
     if (nfiles == 0) {
       fprintf(stderr, "error: 'pz' requires at least one file\n");
@@ -80,9 +84,11 @@ int main(int argc, char *argv[]){
 
     return remove(tmpFile) == 0 ? 0 : 1;
 
+  /* Action - u */
   } else if (strcmp(action, "u") == 0){
     return unpack(archive_path, verbose) == 0 ? 0 : 1;
 
+  /* Action - uz */
   } else if (strcmp(action, "uz") == 0){
     if(decompressArch(tmpFile, archive_path, verbose) != 0){
       fprintf(stderr, "error: decompress failed\n");
@@ -96,9 +102,11 @@ int main(int argc, char *argv[]){
 
     return remove(tmpFile) == 0 ? 0 : 1;
 
+  /* Action - l */
   } else if (strcmp(action, "l") == 0){
     return list(archive_path);
 
+  /* Action - lz */
   } else if (strcmp(action, "lz") == 0){
 
     if(decompressArch(tmpFile, archive_path, verbose) != 0){
@@ -112,7 +120,12 @@ int main(int argc, char *argv[]){
     }
 
     return remove(tmpFile) == 0 ? 0 : 1;
+
+  /* Action - g */
+  } else if (strcmp(action, "g") == 0){
+    return grab(archive_path, filepaths, nfiles, verbose) == 0 ? 0 : 1;
 	
+  /* Unknown action */
   } else {
     fprintf(stderr, "error: unknown action '%s'\n", action);
     usage(argv[0]);

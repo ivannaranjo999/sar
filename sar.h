@@ -35,5 +35,6 @@ int unpack(const char *archive_path, int verbose);
 int compressArch(const char *dst_path, const char *src_path, int verbose);
 int decompressArch(const char *dst_path, const char *src_path, int verbose);
 int list(const char *archive_path);
+int grab(const char *archive_path, const char **filepaths, int count, int verbose);
 
 #endif

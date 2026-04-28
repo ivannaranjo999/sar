@@ -100,7 +100,7 @@ static int unpack_file(FILE *archive, int verbose){
       fclose(dst);
       return -1;
     }
-    
+
     to_write = bytes_read;
     if(fwrite(buf, 1, to_write, dst) != to_write){
       fprintf(stderr,
@@ -160,6 +160,99 @@ int unpack(const char *archive_path, int verbose){
   }
 
   if(status == -1) result = -1;
+
+  fclose(archive);
+  return result;
+}
+
+/* ----------------------------------------------------------------------------
+ * unpack_grab
+ *
+ * Extract given files from the archive at 'archive_path'.
+ * Returns 0 on success, -1 if any file failed.
+ * ------------------------------------------------------------------------- */
+int grab(const char *archive_path, const char **filepaths, int count, int verbose){
+  /* Local variables */
+  FILE      *archive;
+  int        result = 0;
+  int        status = 0;
+  int        it = 0;
+  int        exitLoop = 0;
+  int        foundCount = 0;
+  int        matched = 0;
+  size_t     n = 0;
+  FileHeader header;
+
+  /* Code */
+  archive = fopen(archive_path, "rb");
+  if(archive == NULL){
+    perror(archive_path);
+    return -1;
+  }
+  setvbuf(archive, NULL, _IOFBF, SAR_ARCHIVE_BUF_SIZE);
+
+  /* Read first block */
+  n = fread(&header, sizeof(header), 1, archive);
+
+  if(n == 0) {
+    if(feof(archive)){
+      exitLoop = 1;
+    } else {
+      perror("fread header");
+      result = -1;
+    }
+  }
+
+  /* Exit loop when EOF reached or all files are found */
+  while(exitLoop == 0){
+    matched = 0;
+
+    /* Check if next block is any of the files to find */
+    for (it = 0; it < count; ++it){
+      if(strcmp(header.filename, filepaths[it]) == 0){
+        if (verbose) fprintf(stdout, "grab: found file '%s'\n", header.filename);
+        /* Jump to beginning of the block */
+        fseek(archive, -sizeof(FileHeader), SEEK_CUR);
+
+        /* Extract file */
+        status = unpack_file(archive, verbose);
+        if(status == -1) {
+          result = -1;
+          fprintf(stderr, "error: could not unpack '%s'\n", header.filename);
+        }
+
+        /* Set filename as found */
+        if (++foundCount == count) {
+          if (verbose) fprintf(stdout, "grab: all files found (%d)\n", foundCount);
+          exitLoop = 1;
+        }
+
+        matched = 1;
+
+        /* No need to keep looping filepaths */
+        break;
+      }
+    }
+
+    if (matched != 1) {
+      /* Jump to next file if not found */
+      fseek(archive, (long)header.file_size, SEEK_CUR);
+    }
+
+    /* Read next block */
+    n = fread(&header, sizeof(header), 1, archive);
+
+    if(n == 0) {
+      /* Check if EOF */
+      if(feof(archive)){
+        exitLoop = 1;
+      } else {
+        /* Error found */
+        perror("fread header");
+        status = -1;
+      }
+    }
+  }
 
   fclose(archive);
   return result;
