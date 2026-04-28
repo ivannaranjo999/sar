@@ -3,11 +3,12 @@
 static void usage(const char *name){
   fprintf(stderr, "Usage:\n");
   fprintf(stderr, "Actions:\n");
-  fprintf(stderr, "  %s p   <archive.sar> <file1..fileN>    Pack given files or folders to a SAR archive.\n", name);
-  fprintf(stderr, "  %s u   <archive.sar>                   Unpack SAR archive.\n", name);
-  fprintf(stderr, "  %s pz  <archive.sar.gz> <file1..fileN> Pack given files or folders to a SAR archive and compress it.\n", name);
-  fprintf(stderr, "  %s uz  <archive.sar.gz>                Unpack compressed SAR archive.\n", name);
-  fprintf(stderr, "  %s l  <archive.sar>                    List files contained in a SAR archive.\n", name);
+  fprintf(stderr, "  %s p   <archive.sar> <file1..fileN>     Pack given files or folders to a SAR archive.\n", name);
+  fprintf(stderr, "  %s u   <archive.sar>                    Unpack SAR archive.\n", name);
+  fprintf(stderr, "  %s pz  <archive.sar.gz> <file1..fileN>  Pack given files or folders to a SAR archive and compress it.\n", name);
+  fprintf(stderr, "  %s uz  <archive.sar.gz>                 Unpack compressed SAR archive.\n", name);
+  fprintf(stderr, "  %s l   <archive.sar>                    List files contained in a SAR archive.\n", name);
+  fprintf(stderr, "  %s lz  <archive.sar.gz>                 List files contained in a compressed SAR archive.\n", name);
   fprintf(stderr, "Flags:\n");
   fprintf(stderr, "  -v verbose output\n");
 }
@@ -97,6 +98,20 @@ int main(int argc, char *argv[]){
 
   } else if (strcmp(action, "l") == 0){
     return list(archive_path);
+
+  } else if (strcmp(action, "lz") == 0){
+
+    if(decompressArch(tmpFile, archive_path, verbose) != 0){
+      fprintf(stderr, "error: decompress failed\n");
+      return 1;
+    }
+
+    if(list(tmpFile)){
+      fprintf(stderr, "error: list failed\n");
+      return 1;
+    }
+
+    return remove(tmpFile) == 0 ? 0 : 1;
 	
   } else {
     fprintf(stderr, "error: unknown action '%s'\n", action);
