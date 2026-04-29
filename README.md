@@ -4,14 +4,11 @@ PENDING TEXT
 ```
 Usage:
 Actions:
-  sar p   <archive.sar> <file1..fileN>     Pack given files or folders to a SAR archive.
-  sar pz  <archive.sar.gz> <file1..fileN>  Pack given files or folders to a SAR archive and compress it.
-  sar u   <archive.sar>                    Unpack SAR archive.
-  sar uz  <archive.sar.gz>                 Unpack compressed SAR archive.
-  sar l   <archive.sar>                    List files contained in a SAR archive.
-  sar lz  <archive.sar.gz>                 List files contained in a compressed SAR archive.
-  sar g   <archive.sar> <file1..fileN>     Grab files contained in a SAR archive.
-  sar gz  <archive.sar.gz> <file1..fileN>  Grab files contained in a compressed SAR archive.
+  sar p   <archive.sar> <file1..fileN>       Pack given files or folders to a SAR archive.
+  sar pz  <archive.sgz> <file1..fileN>       Pack given files or folders to a SAR archive and compress it.
+  sar u   <archive.sar|.sgz>                 Unpack SAR archive.
+  sar l   <archive.sar|.sgz>                 List files contained in a SAR archive.
+  sar g   <archive.sar|.sgz> <file1..fileN>  Grab specific files contained in a SAR archive.
 Flags:
   -v verbose output
 
