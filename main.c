@@ -1,16 +1,39 @@
 #include "sar.h"
 
+ArchiveFormat detect_archive_format(const char *archive_path){
+  /* Local variables */
+  unsigned char magic[3];
+  FILE *archive;
+  size_t n = 0;
+
+  /* Code */
+  archive = fopen(archive_path, "rb");
+  if(archive == NULL){
+    return ARCHIVE_DOESNOTEXIST;
+  }
+
+  n = fread(magic, 1, sizeof(magic), archive);
+  fclose(archive);
+
+  if (n < 2) return ARCHIVE_UNKNOWN;
+
+  /* gzip magic is 0x1F 0x8B */
+  if (magic[0] == 0x1F && magic[1] == 0x8B) return ARCHIVE_SGZ;
+    
+  if (n >=3 && memcmp(magic, SAR_MAGIC, 3) == 0) return ARCHIVE_SAR;
+
+  return ARCHIVE_UNKNOWN;
+
+}
+
 static void usage(const char *name){
   fprintf(stderr, "Usage:\n");
   fprintf(stderr, "Actions:\n");
-  fprintf(stderr, "  %s p   <archive.sar> <file1..fileN>     Pack given files or folders to a SAR archive.\n", name);
-  fprintf(stderr, "  %s pz  <archive.sar.gz> <file1..fileN>  Pack given files or folders to a SAR archive and compress it.\n", name);
-  fprintf(stderr, "  %s u   <archive.sar>                    Unpack SAR archive.\n", name);
-  fprintf(stderr, "  %s uz  <archive.sar.gz>                 Unpack compressed SAR archive.\n", name);
-  fprintf(stderr, "  %s l   <archive.sar>                    List files contained in a SAR archive.\n", name);
-  fprintf(stderr, "  %s lz  <archive.sar.gz>                 List files contained in a compressed SAR archive.\n", name);
-  fprintf(stderr, "  %s g   <archive.sar> <file1..fileN>     Grab specific files contained in a SAR archive.\n", name);
-  fprintf(stderr, "  %s gz  <archive.sar.gz> <file1..fileN>  Grab specific files contained in a compressed SAR archive.\n", name);
+  fprintf(stderr, "  %s p   <archive.sar> <file1..fileN>       Pack given files or folders to a SAR archive.\n", name);
+  fprintf(stderr, "  %s pz  <archive.sgz> <file1..fileN>       Pack given files or folders to a SAR archive and compress it.\n", name);
+  fprintf(stderr, "  %s u   <archive.sar|.sgz>                 Unpack SAR archive.\n", name);
+  fprintf(stderr, "  %s l   <archive.sar|.sgz>                 List files contained in a SAR archive.\n", name);
+  fprintf(stderr, "  %s g   <archive.sar|.sgz> <file1..fileN>  Grab specific files contained in a SAR archive.\n", name);
   fprintf(stderr, "Flags:\n");
   fprintf(stderr, "  -v verbose output\n");
 }
@@ -24,6 +47,7 @@ int main(int argc, char *argv[]){
   int i = 0;
   int verbose = 0;
   int nfiles = 0;
+  ArchiveFormat archive_format = ARCHIVE_DOESNOTEXIST;
 
   /* Code */
   if (argc < 3) {
@@ -53,6 +77,13 @@ int main(int argc, char *argv[]){
     usage(argv[0]);
     return 1;
   }
+
+  /* Detect if given SAR is compressed or not */
+  archive_format = detect_archive_format(archive_path);
+  if (archive_format == ARCHIVE_SAR && verbose)
+    fprintf(stdout, "'%s' detected as SAR archive\n", archive_path);
+  if (archive_format == ARCHIVE_SGZ && verbose)
+    fprintf(stdout, "'%s' detected as compressed SAR archive\n", archive_path);
 
   /* Action - p */
   if (strcmp(action, "p") == 0){
@@ -86,47 +117,53 @@ int main(int argc, char *argv[]){
 
   /* Action - u */
   } else if (strcmp(action, "u") == 0){
-    return unpack(archive_path, verbose) == 0 ? 0 : 1;
+    if (archive_format == ARCHIVE_SAR) {
+      return unpack(archive_path, verbose) == 0 ? 0 : 1;
+    } else if (archive_format == ARCHIVE_SGZ) {
+      if(decompressArch(tmpFile, archive_path, verbose) != 0){
+        fprintf(stderr, "error: decompress failed\n");
+        return 1;
+      }
 
-  /* Action - uz */
-  } else if (strcmp(action, "uz") == 0){
-    if(decompressArch(tmpFile, archive_path, verbose) != 0){
-      fprintf(stderr, "error: decompress failed\n");
+      if(unpack(tmpFile, verbose) != 0){
+        fprintf(stderr, "error: unpack failed\n");
+        return 1;
+      }
+
+      return remove(tmpFile) == 0 ? 0 : 1;
+    } else {
+      fprintf(stderr, "error: non existing file or corrupt format for '%s'\n",
+        archive_path);
       return 1;
     }
-
-    if(unpack(tmpFile, verbose) != 0){
-      fprintf(stderr, "error: unpack failed\n");
-      return 1;
-    }
-
-    return remove(tmpFile) == 0 ? 0 : 1;
 
   /* Action - l */
   } else if (strcmp(action, "l") == 0){
-    return list(archive_path);
+    if (archive_format == ARCHIVE_SAR) {
+      return list(archive_path);
+    } else if (archive_format == ARCHIVE_SGZ) {
+      if(decompressArch(tmpFile, archive_path, verbose) != 0){
+        fprintf(stderr, "error: decompress failed\n");
+        return 1;
+      }
 
-  /* Action - lz */
-  } else if (strcmp(action, "lz") == 0){
+      if(list(tmpFile)){
+        fprintf(stderr, "error: list failed\n");
+        return 1;
+      }
 
-    if(decompressArch(tmpFile, archive_path, verbose) != 0){
-      fprintf(stderr, "error: decompress failed\n");
+      return remove(tmpFile) == 0 ? 0 : 1;
+    } else {
+      fprintf(stderr, "error: non existing file or corrupt format for '%s'\n",
+        archive_path);
       return 1;
     }
-
-    if(list(tmpFile)){
-      fprintf(stderr, "error: list failed\n");
-      return 1;
-    }
-
-    return remove(tmpFile) == 0 ? 0 : 1;
 
   /* Action - g */
   } else if (strcmp(action, "g") == 0){
-    return grab(archive_path, filepaths, nfiles, verbose) == 0 ? 0 : 1;
-
-  /* Action - gz */
-  } else if (strcmp(action, "gz") == 0){
+    if (archive_format == ARCHIVE_SAR) {
+      return grab(archive_path, filepaths, nfiles, verbose) == 0 ? 0 : 1;
+    } else if (archive_format == ARCHIVE_SGZ) {
     if(decompressArch(tmpFile, archive_path, verbose) != 0){
       fprintf(stderr, "error: decompress failed\n");
       return 1;
@@ -138,7 +175,12 @@ int main(int argc, char *argv[]){
     }
 
     return remove(tmpFile) == 0 ? 0 : 1;
-	
+    } else {
+      fprintf(stderr, "error: non existing file or corrupt format for '%s'\n",
+        archive_path);
+      return 1;
+    }
+
   /* Unknown action */
   } else {
     fprintf(stderr, "error: unknown action '%s'\n", action);

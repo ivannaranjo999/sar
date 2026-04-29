@@ -30,6 +30,14 @@ typedef struct {
 
 } FileHeader;
 
+typedef enum {
+  ARCHIVE_DOESNOTEXIST,
+  ARCHIVE_UNKNOWN,
+  ARCHIVE_SAR,
+  ARCHIVE_SGZ
+} ArchiveFormat;
+
+
 int pack(const char *archive_path, const char **filepaths, int count, int verbose);
 int unpack(const char *archive_path, int verbose);
 int compressArch(const char *dst_path, const char *src_path, int verbose);
