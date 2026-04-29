@@ -1,8 +1,8 @@
 CC     = gcc
 CFLAGS = -Wall -Wextra -std=c11 -g
 LIBS   = -lz
-SRC    = main.c pack.c unpack.c grab.c list.c
-OBJ    = $(SRC:.c=.o)
+SRC    = src/main.c src/pack.c src/unpack.c src/grab.c src/list.c
+OBJ    = $(patsubst src/%.c, build/%.o, $(SRC))
 TARGET = sar
 PREFIX = /usr/local/bin
 
@@ -11,8 +11,11 @@ all: $(TARGET) clean
 $(TARGET): $(OBJ)
 	$(CC) $(CFLAGS) -o $@ $^ $(LIBS)
 
-%.o: %.c sar.h
+build/%.o: src/%.c src/sar.h | build
 	$(CC) $(CFLAGS) -c -o $@ $< $(LIBS)
+
+build:
+	mkdir -p build
 
 install: $(TARGET)
 	install -m 755 $(TARGET) $(PREFIX)/$(TARGET)
@@ -21,9 +24,10 @@ uninstall:
 	rm -f $(PREFIX)/$(TARGET)
 
 clean:
-	rm -f $(OBJ)
+	rm -rf build
 
 veryclean:
-	rm -f $(OBJ) $(TARGET)
+	rm -rf build
+	rm -f $(TARGET)
 
-.PHONY: all clean
+.PHONY: all clean install uninstall veryclean
