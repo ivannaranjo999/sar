@@ -1,7 +1,7 @@
 CC     = gcc
 CFLAGS = -Wall -Wextra -std=c11 -g
 LIBS   = -lz
-SRC    = main.c pack.c unpack.c
+SRC    = main.c pack.c unpack.c grab.c list.c
 OBJ    = $(SRC:.c=.o)
 TARGET = sar
 PREFIX = /usr/local/bin

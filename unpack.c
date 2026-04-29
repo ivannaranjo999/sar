@@ -37,7 +37,7 @@ static int mkdir_parents(const char *filepath){
  *         0 if we have reached EOF
  *        -1 on error
  * ------------------------------------------------------------------------- */
-static int unpack_file(FILE *archive, int verbose){
+int unpack_file(FILE *archive, int verbose){
   /* Local variables */
   FileHeader     header;
   FILE          *dst;
@@ -166,103 +166,6 @@ int unpack(const char *archive_path, int verbose){
 }
 
 /* ----------------------------------------------------------------------------
- * filename_matches
- *
- * See if given filename matches a list of filepaths.
- * Returns 0 on success, -1 if any file failed.
- * ------------------------------------------------------------------------- */
-static int filename_matches(const char *archived_name, const char **filepaths, int count){
-  /* Local variables */
-  int index = 0;
-
-  /* Code */
-  for (index = 0; index < count ; ++index){
-    if (strstr(archived_name, filepaths[index]) != NULL) return -1;
-  }
-  return 0;
-}
-
-/* ----------------------------------------------------------------------------
- * grab
- *
- * Extract given files from the archive at 'archive_path'.
- * Returns 0 on success, -1 if any file failed.
- * ------------------------------------------------------------------------- */
-int grab(const char *archive_path, const char **filepaths, int count, int verbose){
-  /* Local variables */
-  FILE      *archive;
-  int        result = 0;
-  int        status = 0;
-  int        exitLoop = 0;
-  int        matched = 0;
-  size_t     n = 0;
-  FileHeader header;
-
-  /* Code */
-  archive = fopen(archive_path, "rb");
-  if(archive == NULL){
-    perror(archive_path);
-    return -1;
-  }
-  setvbuf(archive, NULL, _IOFBF, SAR_ARCHIVE_BUF_SIZE);
-
-  /* Read first block */
-  n = fread(&header, sizeof(header), 1, archive);
-
-  if(n == 0) {
-    if(feof(archive)){
-      exitLoop = 1;
-    } else {
-      perror("fread header");
-      result = -1;
-    }
-  }
-
-  /* Exit loop when EOF reached */
-  while(exitLoop == 0){
-    matched = 0;
-
-    /* Check if next block is any of the files to find */
-    if(filename_matches(header.filename, filepaths, count)){
-      if (verbose) fprintf(stdout, "grab: found file '%s'\n", header.filename);
-      /* Jump to beginning of the block */
-      fseek(archive, -sizeof(FileHeader), SEEK_CUR);
-
-      /* Extract file */
-      status = unpack_file(archive, verbose);
-      if(status == -1) {
-        result = -1;
-        fprintf(stderr, "error: could not unpack '%s'\n", header.filename);
-      }
-
-      matched = 1;
-    }
-
-    if (matched != 1) {
-      /* Jump to next file if not found */
-      fseek(archive, (long)header.file_size, SEEK_CUR);
-    }
-
-    /* Read next block */
-    n = fread(&header, sizeof(header), 1, archive);
-
-    if(n == 0) {
-      /* Check if EOF */
-      if(feof(archive)){
-        exitLoop = 1;
-      } else {
-        /* Error found */
-        perror("fread header");
-        status = -1;
-      }
-    }
-  }
-
-  fclose(archive);
-  return result;
-}
-
-/* ----------------------------------------------------------------------------
  * decompressArch
  *
  * Decompress to 'dst' from 'src'
@@ -360,71 +263,4 @@ int decompressArch(const char *dst_path, const char *src_path, int verbose){
   fclose(dst);
   fclose(src);
   return 0;
-}
-
-/* ----------------------------------------------------------------------------
- * get_filename
- *
- * Read one (header + data) block from the archive and write the file to disk.
- * The archive must be positioned at the start of a FileHeader when this is
- * called.
- * Returns 1 if a file was extracted successfully,
- *         0 if we have reached EOF
- *        -1 on error
- * ------------------------------------------------------------------------- */
-static int get_filename(FILE *archive){
-  /* Local variables */
-  FileHeader header;
-  size_t n;
-
-  /* Code */
-  /* Read header */
-  n = fread(&header, sizeof(header), 1, archive);
-
-  if(n == 0) {
-    if(feof(archive)) return 0;
-    perror("fread header");
-    return -1;
-  }
-
-  /* Ensure filename is null terminated */
-  header.filename[SAR_MAX_PATH - 1] = '\0';
-
-  /* Print filename */
-  fprintf(stdout, "%s\n", header.filename);
-
-  /* Jump to next block */
-  fseek(archive, (long)header.file_size, SEEK_CUR);
-
-  return 1;
-}
-
-/* ----------------------------------------------------------------------------
- * list
- *
- * Shows all filenames inside a .sar file
- * Returns 0 on success, -1 on error.
- * ------------------------------------------------------------------------- */
-int list(const char *archive_path){
-  /* Local variables */
-  FILE *archive;
-  int   result = 0;
-  int   status;
-
-  /* Code */
-  archive = fopen(archive_path, "rb");
-  if(archive == NULL){
-    perror(archive_path);
-    return -1;
-  }
-  setvbuf(archive, NULL, _IOFBF, SAR_ARCHIVE_BUF_SIZE);
-
-  while((status = get_filename(archive)) == 1){
-    /* Keep going until EOF or error */
-  }
-
-  if(status == -1) result = -1;
-
-  fclose(archive);
-  return result;
 }
