@@ -166,7 +166,24 @@ int unpack(const char *archive_path, int verbose){
 }
 
 /* ----------------------------------------------------------------------------
- * unpack_grab
+ * filename_matches
+ *
+ * See if given filename matches a list of filepaths.
+ * Returns 0 on success, -1 if any file failed.
+ * ------------------------------------------------------------------------- */
+static int filename_matches(const char *archived_name, const char **filepaths, int count){
+  /* Local variables */
+  int index = 0;
+
+  /* Code */
+  for (index = 0; index < count ; ++index){
+    if (strstr(archived_name, filepaths[index]) != NULL) return -1;
+  }
+  return 0;
+}
+
+/* ----------------------------------------------------------------------------
+ * grab
  *
  * Extract given files from the archive at 'archive_path'.
  * Returns 0 on success, -1 if any file failed.
@@ -176,9 +193,7 @@ int grab(const char *archive_path, const char **filepaths, int count, int verbos
   FILE      *archive;
   int        result = 0;
   int        status = 0;
-  int        it = 0;
   int        exitLoop = 0;
-  int        foundCount = 0;
   int        matched = 0;
   size_t     n = 0;
   FileHeader header;
@@ -203,35 +218,24 @@ int grab(const char *archive_path, const char **filepaths, int count, int verbos
     }
   }
 
-  /* Exit loop when EOF reached or all files are found */
+  /* Exit loop when EOF reached */
   while(exitLoop == 0){
     matched = 0;
 
     /* Check if next block is any of the files to find */
-    for (it = 0; it < count; ++it){
-      if(strcmp(header.filename, filepaths[it]) == 0){
-        if (verbose) fprintf(stdout, "grab: found file '%s'\n", header.filename);
-        /* Jump to beginning of the block */
-        fseek(archive, -sizeof(FileHeader), SEEK_CUR);
+    if(filename_matches(header.filename, filepaths, count)){
+      if (verbose) fprintf(stdout, "grab: found file '%s'\n", header.filename);
+      /* Jump to beginning of the block */
+      fseek(archive, -sizeof(FileHeader), SEEK_CUR);
 
-        /* Extract file */
-        status = unpack_file(archive, verbose);
-        if(status == -1) {
-          result = -1;
-          fprintf(stderr, "error: could not unpack '%s'\n", header.filename);
-        }
-
-        /* Set filename as found */
-        if (++foundCount == count) {
-          if (verbose) fprintf(stdout, "grab: all files found (%d)\n", foundCount);
-          exitLoop = 1;
-        }
-
-        matched = 1;
-
-        /* No need to keep looping filepaths */
-        break;
+      /* Extract file */
+      status = unpack_file(archive, verbose);
+      if(status == -1) {
+        result = -1;
+        fprintf(stderr, "error: could not unpack '%s'\n", header.filename);
       }
+
+      matched = 1;
     }
 
     if (matched != 1) {
