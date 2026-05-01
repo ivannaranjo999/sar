@@ -34,6 +34,7 @@ static void usage(const char *name){
   fprintf(stderr, "  %s u   <archive.sar|.sgz>                 Unpack SAR archive.\n", name);
   fprintf(stderr, "  %s l   <archive.sar|.sgz>                 List files contained in a SAR archive.\n", name);
   fprintf(stderr, "  %s g   <archive.sar|.sgz> <file1..fileN>  Grab specific files contained in a SAR archive.\n", name);
+  fprintf(stderr, "  %s i   <archive.sar|.sgz> <file1..fileN>  Insert specific files to a SAR archive.\n", name);
   fprintf(stderr, "Flags:\n");
   fprintf(stderr, "  -v verbose output\n");
 }
@@ -164,17 +165,50 @@ int main(int argc, char *argv[]){
     if (archive_format == ARCHIVE_SAR) {
       return grab(archive_path, filepaths, nfiles, verbose) == 0 ? 0 : 1;
     } else if (archive_format == ARCHIVE_SGZ) {
-    if(decompressArch(tmpFile, archive_path, verbose) != 0){
-      fprintf(stderr, "error: decompress failed\n");
+      if(decompressArch(tmpFile, archive_path, verbose) != 0){
+        fprintf(stderr, "error: decompress failed\n");
+        return 1;
+      }
+
+      if(grab(tmpFile, filepaths, nfiles, verbose)){
+        fprintf(stderr, "error: grab failed\n");
+        return 1;
+      }
+
+      return remove(tmpFile) == 0 ? 0 : 1;
+    } else {
+      fprintf(stderr, "error: non existing file or corrupt format for '%s'\n",
+        archive_path);
       return 1;
     }
 
-    if(grab(tmpFile, filepaths, nfiles, verbose)){
-      fprintf(stderr, "error: grab failed\n");
-      return 1;
-    }
+  /* Action - i */
+  } else if (strcmp(action, "i") == 0){
+    if (archive_format == ARCHIVE_SAR) {
+      if (nfiles == 0) {
+        fprintf(stderr, "error: 'i' requires at least one file\n");
+        usage(argv[0]);
+        return 1;
+      }
 
-    return remove(tmpFile) == 0 ? 0 : 1;
+      return pack(archive_path, filepaths, nfiles, verbose) == 0 ? 0 : 1;
+    } else if (archive_format == ARCHIVE_SGZ) {
+      if(decompressArch(tmpFile, archive_path, verbose) != 0){
+        fprintf(stderr, "error: decompress failed\n");
+        return 1;
+      }
+
+      if(insert(tmpFile, filepaths, nfiles, verbose)){
+        fprintf(stderr, "error: insert failed\n");
+        return 1;
+      }
+
+      if (compressArch(archive_path, tmpFile, verbose) != 0) {
+        fprintf(stderr, "error: compress failed\n");
+        return 1;
+      }
+
+      return remove(tmpFile) == 0 ? 0 : 1;
     } else {
       fprintf(stderr, "error: non existing file or corrupt format for '%s'\n",
         archive_path);

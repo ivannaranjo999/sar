@@ -6,7 +6,7 @@
  * Write one file into the open archive.
  * Returns 0 on success, -1 on error.
  * ------------------------------------------------------------------------- */
-static int pack_file(FILE *archive, const char *filepath, int verbose){
+int pack_file(FILE *archive, const char *filepath, int verbose){
   /* Local variables */
   struct stat    st;
   FILE          *src;
