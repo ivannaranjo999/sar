@@ -1,5 +1,11 @@
-# SAR - Simple ARchiver
-PENDING TEXT
+# SAR - Simple ARchiver 🍁
+Simple ARchiver, SAR, is a C tool that is able to **archive** a list of files and directories in a single file and **compress** it if desired. SAR also allows actions like:
+
+- ❇ Listing the contents of a `.sar|.sgz` file.
+- ❇ Grabbing specific files or directories from a `.sar|.sgz` file.
+- ❇ Inserting specific files or directories from a `.sar|.sgz` file.
+
+The tool is used as follows:
 
 ```
 Usage:
@@ -9,22 +15,24 @@ Actions:
   sar u   <archive.sar|.sgz>                 Unpack SAR archive.
   sar l   <archive.sar|.sgz>                 List files contained in a SAR archive.
   sar g   <archive.sar|.sgz> <file1..fileN>  Grab specific files contained in a SAR archive.
+  sar i   <archive.sar|.sgz> <file1..fileN>  Insert specific files to a SAR archive.
 Flags:
   -v verbose output
-
 ```
 
 ## The format
-SAR archives are just a flat binary file which is built as a concatenation of blocks, one per line. Each block contains a header and the file contents. The header is a fixed-size C struct storing everything needed to reconstruct the file.
+SAR archives are just a flat binary file which is built as a concatenation of blocks, one per file. Each block contains a header and the file contents. The header is a fixed-size C struct storing everything needed to reconstruct the file.
 
 ```
 [ FileHeader | raw bytes ][ FileHeader | raw bytes ] ...
 ```
 
 ## Compression
-When invoked with `pz`/`uz`, SAR compresses and decompresses the entire archive using **zlib's deflate/inflate** algorithm. The result is a **gzip envelope** with the same format produced by standard `gzip` tool.
+When invoked with `pz`/`u`, SAR compresses and decompresses the entire archive using **zlib's deflate/inflate** algorithm. The result is a **gzip envelope** with the same format produced by standard `gzip` tool.
 
 Compression is applied to the **whole archive** after packing, not per file. This ensures better compression that compressing each file individually.
+
+Only `p` action has its `pz` alternative since SAR is able to detect in the rest of actions if the provided archive is compressed or not.
 
 ## Building & Installing
 List of dependencies:
